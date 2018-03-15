@@ -1,9 +1,29 @@
 #!python3
 
+import configparser
 import serial
 import time
 import irsdk
-ser = serial.Serial('COM3', 9600, timeout=1)
+
+config = configparser.ConfigParser(inline_comment_prefixes=';')
+config.read('config.ini')
+
+
+ser = serial.Serial(config['config']['COMPort'], config['config']['BaudRate'], timeout=int(config['config']['COMTimeout']))
+
+demo = eval(config['config']['demoMode'])
+demoShow = True
+
+if(demo):
+    while True:
+        if demoShow == True:
+            leds = "rgbkycmykrgb#"
+            demoShow = False
+        else:
+            leds = "kcmyrgbrcmyk#"
+            demoShow = True
+        ser.write(leds.encode())
+        time.sleep(.2)
 
 class State:
     ir_connected = False
@@ -22,14 +42,15 @@ def loop():
     ir.freeze_var_buffer_latest()
 
     rpm = ir['RPM']
-    fuelPct = ir['FuelLevelPct']
+    fuelPct = ir['FuelLevelPct'] * 100
     leds = "kkkkkkkkkkkk#"
     
 
-    startRPM = 7000
-    endRPM = 8700
-    shiftRPM = 8850
+    startRPM = 5000
+    endRPM = 6500
+    shiftRPM = 6600
     betweenRPM = (endRPM - startRPM) / 12
+    
 
     if(rpm >= startRPM):
         leds = "gkkkkkkkkkkk#"
@@ -74,14 +95,8 @@ def loop():
             state.fuel_show = state.fuel_show + 1
         else:
             state.fuel_show = 0
-    
-    ser.write(leds.encode())
 
-    """
-        startRPM = 6000
-        endRPM = 8800
-        shiftRPM = 8600
-    """
+    ser.write(leds.encode())
 
 
 if __name__ == '__main__':
