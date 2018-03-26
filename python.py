@@ -15,6 +15,7 @@ demo = eval(config['config']['demoMode'])
 demoShow = True
 
 if(demo):
+    #print(config['porsche919']['fuelAlarm'])
     while True:
         if demoShow == True:
             leds = "rgbkycmykrgb#"
@@ -41,11 +42,39 @@ def check_iracing():
 def loop():
     ir.freeze_var_buffer_latest()
 
-    rpm = ir['RPM']
-    fuelPct = ir['FuelLevelPct'] * 100
-    leds = "kkkkkkkkkkkk#"
-    
 
+    #rpm = ir['RPM']
+    fuelPct = ir['FuelLevelPct'] * 100
+    #leds = "kkkkkkkkkkkk#"
+    leds = ""
+
+    deltaTime = int(round(ir[config['config']['DeltaTo']],1)*10)
+    
+    if deltaTime < 0:
+        i = 0
+        while i > deltaTime:
+            if deltaTime > 12:
+                i = -999999999
+                leds = "gggggggggggg"
+            else:
+                leds += "g"
+                i -= 1
+    if deltaTime > 0:
+        i = 0
+        while i < deltaTime:
+            if deltaTime > 12:
+                i = 999999999
+                leds = "rrrrrrrrrrrr"
+            else:
+                leds += "r"
+                i += 1
+    if deltaTime == 0:
+        leds = "kkkkkkkkkkkk"
+    while len(leds) < 12:
+        leds += "k"
+    leds += "#"
+
+    """
     startRPM = 5000
     endRPM = 6500
     shiftRPM = 6600
@@ -85,8 +114,8 @@ def loop():
             state.rpm_shift_show = state.rpm_shift_show + 1
         else:
             state.rpm_shift_show = 0
-
-    if(fuelPct <= 10):
+    """
+    if(fuelPct <= config['default']['fuelAlarm']):
         if(state.fuel_show <= 10):
             leds = 'm' + leds[1:]
             state.fuel_show = state.fuel_show + 1
@@ -95,6 +124,7 @@ def loop():
             state.fuel_show = state.fuel_show + 1
         else:
             state.fuel_show = 0
+
 
     ser.write(leds.encode())
 
@@ -108,6 +138,6 @@ if __name__ == '__main__':
             check_iracing()
             if state.ir_connected:
                 loop()
-            time.sleep(.01)
+            time.sleep(.05)
     except KeyboardInterrupt:
         pass
